@@ -220,8 +220,8 @@
            :park (inc :park dec +) pmap)
       (run)
       (unpark 0 '((1 2 3)))
-      (serialize)                       ;; transferable object
-      (deserialize)                     ;; another vm might deserialize and continue evaluation
+      (serialize)   ;; transferable object
+      (deserialize) ;; another vm might deserialize and continue evaluation
       (unpark 3 '(40))
       (unpark 1 '(10))
       (unpark 2 '(30))
@@ -244,11 +244,20 @@
            false (42) (43) if)
       (run)
       (serialize)
-      (deserialize))
+      (deserialize)
+      (result))
 
   (-> '(#_ "Each example"
            :uses (jjoy.kernel jjoy.math jjoy.sequences)
            (1 2 3) (1 +) each)
+      (run))
+
+  (-> '(#_ ""
+           :uses (jjoy.shuffle)
+           1 2 3 4
+           (a b c d) (a a a) shuffle-stack
+           (a b c d) (d c b a) shuffle-queue
+           1 2 3 4)
       (run))
 
   )

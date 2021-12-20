@@ -1,7 +1,8 @@
 (ns jjoy.shuffle
   (:refer-clojure :exclude [shuffle compile])
   (:require [clojure.spec.alpha :as s]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [jjoy.core :as jjoy]))
 
 (s/def :lhs/form (s/and (s/+ :lhs/el)))
 (s/def :lhs/el (s/or :binding :common/binding :nested :lhs/nested))
@@ -83,6 +84,22 @@
 (defn compile [lhs rhs]
   (comp (compile-rhs (s/conform :rhs/form rhs)) (compile-lhs (s/conform :lhs/form lhs))))
 
+(defn shuffle [k]
+  (fn [{:keys [stack] :as thread}]
+    (let [[after-form before-form stack] (jjoy/consume-stack 2 stack)
+          f (compile before-form after-form)]
+      (-> thread
+          (assoc :stack stack)
+          (update k f)))))
+
+(def shuffle-stack (shuffle :stack))
+
+(def shuffle-queue (shuffle :queue))
+
+(defn vocabulary []
+  {'shuffle-stack {:jjoy/impl #'shuffle-stack}
+   'shuffle-queue {:jjoy/impl #'shuffle-queue}})
+
 (comment
 
   (s/conform :lhs/form '((a b ..c))) ;; => [[:nested {:head [[:binding a] [:binding b]], :rest ..c}]]
@@ -108,10 +125,10 @@
         g (fn [[a b & c]]
             (cons b (cons a c)))]
     (time (dotimes [_ 100000]
-            ))
+            (f '(1 2 3 4))))
+    (time (dotimes [_ 100000]
+            (g '(1 2 3 4))))
     (list (f '(1 2 3 4))
           (g '(1 2 3 4))))
-
-  (flatten '((((1) 2 3) 4 5) [6] 7))
 
   )
